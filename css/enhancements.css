@@ -1,0 +1,399 @@
+/* ═══════════════════════════════════════════════════════════
+   css/enhancements.css
+   Add this AFTER style.css in index.html
+   ═══════════════════════════════════════════════════════════ */
+
+/* ══════════════════════════════════════════════════════════
+   DARK / LIGHT THEME OVERRIDE
+   data-theme="light" forces light mode regardless of OS
+   ══════════════════════════════════════════════════════════ */
+[data-theme="light"] {
+  --bg:        #F5F0E8;
+  --bg2:       #EDE8DF;
+  --surface:   #FDFAF5;
+  --surface2:  #F5F0E8;
+  --border:    rgba(100,90,70,0.15);
+  --border2:   rgba(100,90,70,0.25);
+  --text:      #1C1A16;
+  --text2:     #5C5548;
+  --text3:     #8C8070;
+  --accent:    #7B6FA0;
+  --accent2:   #6A9E84;
+  --accent-glow: rgba(123,111,160,0.20);
+  --glass:     rgba(255,255,255,0.62);
+  --glass-border: rgba(255,255,255,0.80);
+  --glass-input: rgba(255,255,255,0.50);
+}
+
+[data-theme="dark"] {
+  --bg:        #1A1814;
+  --bg2:       #221F1A;
+  --surface:   #2A2620;
+  --surface2:  #221F1A;
+  --border:    rgba(255,245,220,0.10);
+  --border2:   rgba(255,245,220,0.18);
+  --text:      #F5EDD8;
+  --text2:     #B8A98A;
+  --text3:     #7A6E58;
+  --accent:    #5AA876;
+  --accent2:   #7DC495;
+  --accent-glow: rgba(90,168,118,0.20);
+  --glass:     rgba(30,25,45,0.70);
+  --glass-border: rgba(255,255,255,0.10);
+  --glass-input: rgba(25,20,38,0.60);
+}
+
+/* ── Theme toggle button ── */
+.theme-toggle-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border2);
+  background: var(--glass-input);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.theme-toggle-btn:hover {
+  border-color: var(--accent);
+  transform: rotate(20deg) scale(1.1);
+}
+
+/* ══════════════════════════════════════════════════════════
+   MORPHING SUBMIT BUTTON
+   ══════════════════════════════════════════════════════════ */
+#submit-btn {
+  position: relative;
+  overflow: hidden;
+  --progress: 0%;
+}
+
+/* Progress fill layer */
+#submit-btn .btn-progress-bar {
+  position: absolute;
+  left: 0; top: 0;
+  width: var(--progress);
+  height: 100%;
+  background: rgba(255,255,255,0.18);
+  transition: width 0.15s ease;
+  pointer-events: none;
+}
+
+/* Default text */
+#submit-btn .btn-default-text { position: relative; z-index: 1; }
+
+/* Progress text */
+#submit-btn .btn-progress-text {
+  position: relative;
+  z-index: 1;
+  display: none;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Loading state */
+#submit-btn.btn-loading .btn-default-text { display: none; }
+#submit-btn.btn-loading .btn-progress-text { display: inline; }
+#submit-btn.btn-loading { cursor: wait; }
+
+/* Pulsing glow on load */
+#submit-btn.btn-loading {
+  animation: btnPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes btnPulse {
+  0%, 100% { box-shadow: 0 4px 20px rgba(123,111,160,0.35); }
+  50%       { box-shadow: 0 4px 32px rgba(123,111,160,0.60); }
+}
+
+/* ══════════════════════════════════════════════════════════
+   SHARE BUTTON (below affirmation)
+   ══════════════════════════════════════════════════════════ */
+.share-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0.55rem 1.1rem;
+  border-radius: 999px;
+  border: 1.5px solid rgba(123,111,160,0.25);
+  background: var(--glass-input);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.80rem;
+  font-weight: 700;
+  color: var(--accent);
+  cursor: pointer;
+  margin-top: 0.85rem;
+  transition: all 0.2s ease;
+  letter-spacing: 0.02em;
+}
+
+.share-btn:hover {
+  border-color: var(--accent);
+  background: var(--accent-glow);
+  transform: translateY(-1px);
+}
+
+/* ══════════════════════════════════════════════════════════
+   FULLSCREEN BREATHE LINK (shown in orb panel)
+   ══════════════════════════════════════════════════════════ */
+.breathe-fullscreen-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text3);
+  text-decoration: none;
+  padding: 5px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border2);
+  transition: all 0.2s ease;
+  margin-top: 0.5rem;
+}
+
+.breathe-fullscreen-link:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--accent-glow);
+}
+
+/* ══════════════════════════════════════════════════════════
+   ONBOARDING OVERLAY
+   ══════════════════════════════════════════════════════════ */
+#onboarding-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+#onboarding-overlay.visible { opacity: 1; }
+#onboarding-overlay.hiding  { opacity: 0; pointer-events: none; }
+
+.ob-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 8, 20, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.ob-card {
+  position: relative;
+  z-index: 1;
+  background: var(--surface, #2A2620);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 24px;
+  padding: 2.5rem 2rem 2rem;
+  width: min(480px, 92vw);
+  box-shadow: 0 32px 80px rgba(0,0,0,0.45);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+}
+
+.ob-step {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  text-align: center;
+  animation: fadeUp 0.35s ease both;
+}
+
+.ob-step.active { display: flex; }
+
+.ob-icon {
+  font-size: 3rem;
+  line-height: 1;
+  margin-bottom: 0.25rem;
+}
+
+.ob-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.6rem;
+  color: var(--text, #F5EDD8);
+  line-height: 1.2;
+}
+
+.ob-sub {
+  font-size: 0.88rem;
+  color: var(--text3, #7A6E58);
+  line-height: 1.6;
+  max-width: 340px;
+}
+
+.ob-field {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: left;
+  position: relative;
+}
+
+.ob-label {
+  font-size: 0.80rem;
+  font-weight: 700;
+  color: var(--text2, #B8A98A);
+  letter-spacing: 0.04em;
+}
+
+.ob-input {
+  width: 100%;
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  border: 1.5px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.05);
+  font-family: 'Nunito', sans-serif;
+  font-size: 1rem;
+  color: var(--text, #F5EDD8);
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.ob-input:focus { border-color: #8B7BAD; }
+
+.ob-textarea {
+  width: 100%;
+  min-height: 90px;
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  border: 1.5px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.05);
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.92rem;
+  color: var(--text, #F5EDD8);
+  outline: none;
+  resize: none;
+  transition: border-color 0.2s;
+  line-height: 1.55;
+}
+
+.ob-textarea:focus    { border-color: #8B7BAD; }
+.ob-textarea::placeholder { color: rgba(196,181,216,0.30); }
+
+.ob-char-count {
+  font-size: 0.72rem;
+  color: var(--text3, #7A6E58);
+  text-align: right;
+  margin-top: 2px;
+}
+
+/* Reason buttons grid */
+.ob-reasons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  width: 100%;
+}
+
+.ob-reason-btn {
+  padding: 0.7rem 0.6rem;
+  border-radius: 12px;
+  border: 1.5px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.04);
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text2, #B8A98A);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+  line-height: 1.3;
+}
+
+.ob-reason-btn:hover {
+  border-color: rgba(139,123,173,0.40);
+  background: rgba(139,123,173,0.08);
+  color: var(--text, #F5EDD8);
+}
+
+.ob-reason-btn.active {
+  border-color: #8B7BAD;
+  background: rgba(139,123,173,0.18);
+  color: #C4B5D8;
+}
+
+/* CTA button */
+.ob-btn {
+  width: 100%;
+  padding: 0.9rem;
+  border-radius: 12px;
+  border: none;
+  background: linear-gradient(135deg, #8B7BAD, #6A9E84);
+  color: white;
+  font-family: 'Nunito', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.22s ease;
+  box-shadow: 0 4px 20px rgba(139,123,173,0.30);
+  margin-top: 0.5rem;
+}
+
+.ob-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px rgba(139,123,173,0.40);
+}
+
+.ob-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Skip link */
+.ob-skip {
+  font-size: 0.78rem;
+  color: var(--text3, #7A6E58);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: color 0.2s;
+  margin-top: 0.25rem;
+}
+
+.ob-skip:hover { color: var(--text2, #B8A98A); }
+
+/* Progress dots */
+.ob-dots {
+  display: flex;
+  gap: 8px;
+  margin-top: 1.5rem;
+}
+
+.ob-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.15);
+  transition: all 0.3s ease;
+}
+
+.ob-dot.active {
+  background: #8B7BAD;
+  border-color: #8B7BAD;
+  box-shadow: 0 0 8px rgba(139,123,173,0.50);
+  transform: scale(1.2);
+}
+
+.ob-dot.complete {
+  background: #6A9E84;
+  border-color: #6A9E84;
+}

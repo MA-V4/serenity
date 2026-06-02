@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Serenity - AI Mental Wellness Companion</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Nunito:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/enhancements.css" />
+
+  <!-- Confetti (free CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+
+  <!-- Three.js (free CDN) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════
+       HEADER
+  ═══════════════════════════════════════ -->
+  <header>
+    <a class="logo" href="#">
+      <div class="logo-leaf"></div>
+      Serenity
+    </a>
+    <div class="header-right">
+      <span class="badge badge-green">AI Wellness Tool</span>
+      <!-- Theme toggle injected by enhancements.js -->
+    </div>
+  </header>
+
+  <!-- ═══════════════════════════════════════
+       MAIN
+  ═══════════════════════════════════════ -->
+  <main>
+
+    <!-- HERO -->
+    <section class="hero fade-up">
+      <p class="hero-eyebrow">Mental Wellness Companion</p>
+      <h1>How are you feeling <em>today?</em></h1>
+      <p>Describe what's on your mind and receive personalised coping
+         strategies, emotional insights, and crisis resources -
+         powered by AI.</p>
+    </section>
+
+    <!-- INPUT CARD -->
+    <div class="card fade-up delay-1" id="input-card">
+
+      <span class="card-label">Your current mood</span>
+
+      <div class="mood-grid" id="mood-grid">
+        <button class="mood-btn" data-mood="anxious">
+          <span class="mood-icon">😰</span>
+          <span class="mood-label">Anxious</span>
+        </button>
+        <button class="mood-btn" data-mood="sad">
+          <span class="mood-icon">😔</span>
+          <span class="mood-label">Sad</span>
+        </button>
+        <button class="mood-btn" data-mood="stressed">
+          <span class="mood-icon">😤</span>
+          <span class="mood-label">Stressed</span>
+        </button>
+        <button class="mood-btn" data-mood="overwhelmed">
+          <span class="mood-icon">🌊</span>
+          <span class="mood-label">Overwhelmed</span>
+        </button>
+        <button class="mood-btn" data-mood="numb">
+          <span class="mood-icon">😶</span>
+          <span class="mood-label">Numb</span>
+        </button>
+        <button class="mood-btn" data-mood="angry">
+          <span class="mood-icon">😡</span>
+          <span class="mood-label">Angry</span>
+        </button>
+        <button class="mood-btn" data-mood="hopeful">
+          <span class="mood-icon">🌱</span>
+          <span class="mood-label">Hopeful</span>
+        </button>
+        <button class="mood-btn" data-mood="okay">
+          <span class="mood-icon">🙂</span>
+          <span class="mood-label">Just okay</span>
+        </button>
+      </div>
+
+      <div class="input-area">
+        <label for="journal">
+          Tell me more about what's going on
+          <span class="optional">(optional)</span>
+        </label>
+        <textarea id="journal"
+          placeholder="I've been feeling really overwhelmed at work lately..."></textarea>
+
+        <div class="sliders-row">
+          <div class="slider-group">
+            <label for="sleep-slider">
+              Sleep quality <span id="sleep-val">5</span>/10
+            </label>
+            <input type="range" id="sleep-slider" min="1" max="10" value="5" />
+          </div>
+          <div class="slider-group">
+            <label for="stress-slider">
+              Stress level <span id="stress-val">5</span>/10
+            </label>
+            <input type="range" id="stress-slider" min="1" max="10" value="5" />
+          </div>
+        </div>
+
+        <div id="error-box" class="error-box" role="alert"></div>
+
+        <button class="btn-primary" id="submit-btn">
+          <span class="btn-default-text">Analyse my wellbeing</span>
+          <span class="btn-progress-text">0%</span>
+          <div class="btn-progress-bar"></div>
+        </button>
+      </div>
+    </div>
+
+    <!-- LOADING -->
+    <div class="loading-state" id="loading" aria-live="polite">
+      <div class="spinner"></div>
+      <p id="loading-msg">Listening carefully to how you're feeling...</p>
+      <div class="breathe-wrap">
+        <div class="breathe-circle">Breathe</div>
+        <p class="breathe-label">Follow the circle - breathe in as it expands, out as it shrinks</p>
+      </div>
+    </div>
+
+    <!-- RESULTS -->
+    <div id="results">
+
+      <div id="urgency-banner" class="urgency-banner fade-up"></div>
+
+      <div class="result-grid">
+        <div class="card result-section fade-up delay-1">
+          <h3>Detected emotions</h3>
+          <div id="chip-row" class="chip-row"></div>
+        </div>
+        <div class="card result-section fade-up delay-1">
+          <h3>Personalised affirmation</h3>
+          <div id="affirmation" class="affirmation-box"></div>
+        </div>
+      </div>
+
+      <div class="card result-section fade-up delay-2">
+        <h3>Coping strategies for you</h3>
+        <ul id="strategies" class="strategy-list"></ul>
+      </div>
+
+      <div class="card result-section fade-up delay-3">
+        <h3>UK support resources</h3>
+        <div id="resources" class="resource-list"></div>
+      </div>
+
+      <!-- ══ FOCUS TOOLS ══ -->
+      <div class="card focus-tools-card fade-up delay-3" id="focus-tools">
+        <div class="focus-tools-header">
+          <div>
+            <h2 class="focus-tools-title">Focus Tools</h2>
+            <p class="focus-tools-sub">Shift your attention with an interactive activity</p>
+          </div>
+          <span class="focus-badge">✦ Try one</span>
+        </div>
+
+        <div class="focus-tabs" role="tablist">
+          <button class="focus-tab active" data-tab="orb">
+            <span class="tab-icon">🔮</span>
+            <span class="tab-label">3D Orb</span>
+          </button>
+          <button class="focus-tab" data-tab="puzzle">
+            <span class="tab-icon">✦</span>
+            <span class="tab-label">Dot Mandala</span>
+          </button>
+          <button class="focus-tab" data-tab="grounding">
+            <span class="tab-icon">🌿</span>
+            <span class="tab-label">Grounding</span>
+          </button>
+        </div>
+
+        <!-- TAB 1: ORB -->
+        <div class="focus-panel active" id="tab-orb">
+          <p class="focus-hint">Drag to spin · Watch it breathe with you</p>
+          <div class="orb-container">
+            <canvas id="orb-canvas"></canvas>
+            <div class="orb-instructions">
+              <span>drag to rotate</span>
+              <span class="orb-dot">·</span>
+              <span>breathe with the pulse</span>
+            </div>
+          </div>
+          <div style="text-align:center;margin-top:0.75rem">
+            <a href="breathe.html" class="breathe-fullscreen-link" target="_blank">
+              ⛶ Open full-screen breathe mode
+            </a>
+          </div>
+          <div class="orb-controls">
+            <button class="orb-btn" id="orb-calm">Calm</button>
+            <button class="orb-btn active" id="orb-focus">Focus</button>
+            <button class="orb-btn" id="orb-energise">Energise</button>
+          </div>
+        </div>
+
+        <!-- TAB 2: MANDALA -->
+        <div class="focus-panel" id="tab-puzzle">
+          <p class="focus-hint">Click dots in any order · No right or wrong</p>
+          <div class="puzzle-container">
+            <canvas id="puzzle-canvas"></canvas>
+          </div>
+          <div class="puzzle-controls">
+            <button class="orb-btn active" id="puzzle-reset">New Pattern</button>
+            <button class="orb-btn" id="puzzle-clear">Clear</button>
+          </div>
+        </div>
+
+        <!-- TAB 3: GROUNDING -->
+        <div class="focus-panel" id="tab-grounding">
+          <p class="focus-hint">The 5-4-3-2-1 technique · Bring yourself back to the present</p>
+          <div class="grounding-container" id="grounding-container">
+
+            <div class="grounding-step active" id="g-step-0">
+              <div class="grounding-number">5</div>
+              <div class="grounding-sense">things you can <em>see</em></div>
+              <p class="grounding-prompt">Look around you. Name 5 things out loud or in your head.</p>
+              <div class="grounding-inputs" id="g-inputs-0"></div>
+              <button class="grounding-next" data-next="1">Next sense →</button>
+            </div>
+
+            <div class="grounding-step" id="g-step-1">
+              <div class="grounding-number">4</div>
+              <div class="grounding-sense">things you can <em>touch</em></div>
+              <p class="grounding-prompt">Feel textures around you. Name 4 things you can physically feel.</p>
+              <div class="grounding-inputs" id="g-inputs-1"></div>
+              <button class="grounding-next" data-next="2">Next sense →</button>
+            </div>
+
+            <div class="grounding-step" id="g-step-2">
+              <div class="grounding-number">3</div>
+              <div class="grounding-sense">things you can <em>hear</em></div>
+              <p class="grounding-prompt">Listen carefully. Name 3 sounds in your environment right now.</p>
+              <div class="grounding-inputs" id="g-inputs-2"></div>
+              <button class="grounding-next" data-next="3">Next sense →</button>
+            </div>
+
+            <div class="grounding-step" id="g-step-3">
+              <div class="grounding-number">2</div>
+              <div class="grounding-sense">things you can <em>smell</em></div>
+              <p class="grounding-prompt">Take a slow breath in. Notice 2 smells, even subtle ones.</p>
+              <div class="grounding-inputs" id="g-inputs-3"></div>
+              <button class="grounding-next" data-next="4">Next sense →</button>
+            </div>
+
+            <div class="grounding-step" id="g-step-4">
+              <div class="grounding-number">1</div>
+              <div class="grounding-sense">thing you can <em>taste</em></div>
+              <p class="grounding-prompt">Notice any taste in your mouth right now.</p>
+              <div class="grounding-inputs" id="g-inputs-4"></div>
+              <button class="grounding-next" data-next="done">Finish ✓</button>
+            </div>
+
+            <div class="grounding-step" id="g-step-done">
+              <div class="grounding-complete">
+                <div class="grounding-tick">✓</div>
+                <h3>Well done</h3>
+                <p>You've completed the grounding exercise. Take a moment to notice how you feel right now.</p>
+                <button class="orb-btn active" id="grounding-restart">Start again</button>
+              </div>
+            </div>
+
+          </div>
+
+          <div class="grounding-progress" id="grounding-progress">
+            <span class="g-dot active" data-step="0"></span>
+            <span class="g-dot" data-step="1"></span>
+            <span class="g-dot" data-step="2"></span>
+            <span class="g-dot" data-step="3"></span>
+            <span class="g-dot" data-step="4"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ MOOD TRACKER ══ -->
+      <div class="card mood-tracker-card fade-up delay-4" id="mood-tracker">
+        <div class="tracker-header">
+          <div>
+            <h2 class="tracker-title">Your Mood History</h2>
+            <p class="tracker-sub">Last 7 check-ins · Stored only on this device</p>
+          </div>
+          <div class="tracker-header-right">
+            <span class="tracker-privacy-badge">🔒 Local only</span>
+            <button class="tracker-clear-btn" id="tracker-clear-btn">Clear</button>
+          </div>
+        </div>
+        <div class="tracker-stats" id="tracker-stats">
+          <div class="tracker-stat">
+            <span class="tracker-stat-value" id="stat-checkins">0</span>
+            <span class="tracker-stat-label">Check-ins</span>
+          </div>
+          <div class="tracker-stat">
+            <span class="tracker-stat-value" id="stat-streak">0</span>
+            <span class="tracker-stat-label">Day streak</span>
+          </div>
+          <div class="tracker-stat">
+            <span class="tracker-stat-value" id="stat-common">-</span>
+            <span class="tracker-stat-label">Most common</span>
+          </div>
+          <div class="tracker-stat">
+            <span class="tracker-stat-value" id="stat-trend">-</span>
+            <span class="tracker-stat-label">Trend</span>
+          </div>
+        </div>
+        <div class="tracker-chart-wrap">
+          <canvas id="tracker-chart"></canvas>
+          <div class="tracker-empty" id="tracker-empty">
+            <span class="tracker-empty-icon">📊</span>
+            <p>Your mood chart will appear here after your first check-in</p>
+          </div>
+        </div>
+        <div class="tracker-list" id="tracker-list"></div>
+      </div>
+
+      <button class="btn-secondary fade-up delay-4" id="reset-btn">
+        ↩ Start again
+      </button>
+
+    </div><!-- /results -->
+
+    <p class="disclaimer fade-up delay-5">
+      Serenity is an AI-powered tool for informational and wellbeing support only.
+      It is not a replacement for professional medical advice, diagnosis, or treatment.
+      If you are in crisis, please call 999 or contact Samaritans on 116 123 immediately.
+    </p>
+
+  </main>
+
+  <!-- ═══════════════════════════════════════
+       JAVASCRIPT - load order matters
+  ═══════════════════════════════════════ -->
+  <script src="js/resources.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/mood.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/moodTracker.js"></script>
+  <script src="js/focusTools.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/onboarding.js"></script>
+  <script src="js/enhancements.js"></script>
+
+</body>
+</html>

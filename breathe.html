@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Breathe - Serenity</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;1,400&family=Nunito:wght@300;400;600&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #1E1A2E;
+      color: #EDE8F5;
+      font-family: 'Nunito', sans-serif;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    /* Ambient background orbs */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 60% 50% at 20% 30%, rgba(139,123,173,0.18) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 40% at 80% 70%, rgba(106,158,132,0.15) 0%, transparent 60%);
+      animation: ambientShift 20s ease-in-out infinite alternate;
+      pointer-events: none;
+    }
+
+    @keyframes ambientShift {
+      0%   { filter: hue-rotate(0deg); }
+      100% { filter: hue-rotate(15deg); }
+    }
+
+    /* Back link */
+    .back-link {
+      position: fixed;
+      top: 1.5rem;
+      left: 1.5rem;
+      font-size: 0.82rem;
+      color: rgba(196,181,216,0.50);
+      text-decoration: none;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      transition: color 0.2s;
+      z-index: 10;
+    }
+    .back-link:hover { color: rgba(196,181,216,0.90); }
+
+    /* Canvas fills viewport */
+    #breathe-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Text overlay */
+    .breathe-ui {
+      position: relative;
+      z-index: 5;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.5rem;
+      pointer-events: none;
+    }
+
+    .breathe-phase {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2rem, 6vw, 3.5rem);
+      color: rgba(237,232,245,0.90);
+      letter-spacing: 0.02em;
+      transition: opacity 0.8s ease;
+      text-align: center;
+    }
+
+    .breathe-count {
+      font-size: clamp(1rem, 3vw, 1.4rem);
+      color: rgba(196,181,216,0.60);
+      font-weight: 300;
+      letter-spacing: 0.1em;
+    }
+
+    /* Controls */
+    .breathe-controls {
+      position: fixed;
+      bottom: 2.5rem;
+      display: flex;
+      gap: 1rem;
+      z-index: 10;
+    }
+
+    .ctrl-btn {
+      padding: 0.6rem 1.4rem;
+      border-radius: 999px;
+      border: 1px solid rgba(196,181,216,0.25);
+      background: rgba(30,26,46,0.70);
+      color: rgba(196,181,216,0.75);
+      font-family: 'Nunito', sans-serif;
+      font-size: 0.82rem;
+      font-weight: 700;
+      cursor: pointer;
+      backdrop-filter: blur(12px);
+      transition: all 0.2s ease;
+      letter-spacing: 0.04em;
+    }
+    .ctrl-btn:hover   { border-color: #8B7BAD; color: #C4B5D8; }
+    .ctrl-btn.active  { background: rgba(139,123,173,0.25); border-color: #8B7BAD; color: #EDE8F5; }
+
+    /* Sound indicator */
+    .sound-indicator {
+      position: fixed;
+      top: 1.5rem;
+      right: 1.5rem;
+      font-size: 0.78rem;
+      color: rgba(196,181,216,0.40);
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      z-index: 10;
+    }
+  </style>
+</head>
+<body>
+
+  <a class="back-link" href="index.html">← Back to Serenity</a>
+  <div class="sound-indicator" id="sound-indicator">🔇 SOUND OFF</div>
+
+  <canvas id="breathe-canvas"></canvas>
+
+  <div class="breathe-ui">
+    <div class="breathe-phase" id="breathe-phase">Breathe in</div>
+    <div class="breathe-count" id="breathe-count">4</div>
+  </div>
+
+  <div class="breathe-controls">
+    <button class="ctrl-btn active" id="btn-478" data-pattern="478">4-7-8</button>
+    <button class="ctrl-btn" id="btn-box" data-pattern="box">Box</button>
+    <button class="ctrl-btn" id="btn-calm" data-pattern="calm">Calm</button>
+    <button class="ctrl-btn" id="btn-sound" data-sound>🔇 Sound</button>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script>
+
+    // ── BREATHING PATTERNS ─────────────────────────────────
+    var patterns = {
+      '478':  { in: 4, hold: 7, out: 8, name: '4-7-8'     },
+      'box':  { in: 4, hold: 4, out: 4, holdOut: 4, name: 'Box Breathing' },
+      'calm': { in: 4, hold: 1, out: 6, name: 'Calm'      }
+    };
+
+    var currentPattern = patterns['478'];
+    var phase          = 'in';   // in | hold | out | holdOut
+    var countdown      = currentPattern.in;
+    var soundEnabled   = false;
+    var audioCtx       = null;
+    var animRunning    = true;
+
+    // ── THREE.JS ORB ────────────────────────────────────────
+    var canvas   = document.getElementById('breathe-canvas');
+    var renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
+    renderer.setClearColor(0x000000, 0);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+    var scene  = new THREE.Scene();
+    var W = window.innerWidth, H = window.innerHeight;
+    renderer.setSize(W, H);
+
+    var camera = new THREE.PerspectiveCamera(45, W / H, 0.1, 100);
+    camera.position.z = 3.5;
+
+    // Sphere with shader
+    var geo = new THREE.SphereGeometry(1, 64, 64);
+    var mat = new THREE.ShaderMaterial({
+      uniforms: {
+        uTime:   { value: 0 },
+        uBreath: { value: 0 },
+        uColor1: { value: new THREE.Color(0x8B7BAD) },
+        uColor2: { value: new THREE.Color(0x6A9E84) }
+      },
+      vertexShader: `
+        uniform float uTime;
+        uniform float uBreath;
+        varying vec3 vNormal;
+        varying vec3 vPos;
+        float hash(vec3 p){
+          p=fract(p*vec3(443.8,397.2,491.1));
+          p+=dot(p.zxy,p.yxz+19.19);
+          return fract(p.x*p.y*p.z);
+        }
+        float noise(vec3 p){
+          vec3 i=floor(p); vec3 f=fract(p);
+          f=f*f*(3.0-2.0*f);
+          return mix(
+            mix(mix(hash(i),hash(i+vec3(1,0,0)),f.x),
+                mix(hash(i+vec3(0,1,0)),hash(i+vec3(1,1,0)),f.x),f.y),
+            mix(mix(hash(i+vec3(0,0,1)),hash(i+vec3(1,0,1)),f.x),
+                mix(hash(i+vec3(0,1,1)),hash(i+vec3(1,1,1)),f.x),f.y),
+            f.z);
+        }
+        void main(){
+          vNormal=normal; vPos=position;
+          float n=noise(position*1.8+uTime*0.15)*0.5
+                 +noise(position*3.5-uTime*0.10)*0.25
+                 +noise(position*7.0+uTime*0.08)*0.12;
+          float d=n*0.14*(0.6+uBreath*0.6);
+          vec3 np=position+normal*d;
+          np*=1.0+uBreath*0.18;
+          gl_Position=projectionMatrix*modelViewMatrix*vec4(np,1.0);
+        }
+      `,
+      fragmentShader: `
+        uniform vec3 uColor1;
+        uniform vec3 uColor2;
+        uniform float uTime;
+        uniform float uBreath;
+        varying vec3 vNormal;
+        varying vec3 vPos;
+        void main(){
+          vec3 view=normalize(cameraPosition-vPos);
+          float fr=pow(1.0-max(dot(normalize(vNormal),view),0.0),2.0);
+          float sw=sin(vPos.y*2.0+uTime*0.5)*0.5+0.5;
+          vec3 col=mix(uColor1,uColor2,fr*0.7+sw*0.3);
+          col+=uBreath*0.10;
+          gl_FragColor=vec4(col,0.88-fr*0.12);
+        }
+      `,
+      transparent: true
+    });
+
+    var sphere = new THREE.Mesh(geo, mat);
+    scene.add(sphere);
+
+    // Rings
+    var ring1 = new THREE.Mesh(
+      new THREE.TorusGeometry(1.5, 0.018, 16, 100),
+      new THREE.MeshBasicMaterial({ color: 0x8B7BAD, transparent: true, opacity: 0.35 })
+    );
+    ring1.rotation.x = Math.PI / 2.5;
+    scene.add(ring1);
+
+    var ring2 = new THREE.Mesh(
+      new THREE.TorusGeometry(1.65, 0.010, 16, 100),
+      new THREE.MeshBasicMaterial({ color: 0x6A9E84, transparent: true, opacity: 0.22 })
+    );
+    ring2.rotation.x = -Math.PI / 3;
+    ring2.rotation.z =  Math.PI / 4;
+    scene.add(ring2);
+
+    // Particles
+    var pCount = 180;
+    var pPos   = new Float32Array(pCount * 3);
+    for (var i = 0; i < pCount; i++) {
+      var theta = Math.random() * Math.PI * 2;
+      var phi   = Math.acos(2 * Math.random() - 1);
+      var r     = 2.0 + Math.random() * 1.0;
+      pPos[i*3]   = r * Math.sin(phi) * Math.cos(theta);
+      pPos[i*3+1] = r * Math.sin(phi) * Math.sin(theta);
+      pPos[i*3+2] = r * Math.cos(phi);
+    }
+    var pGeo = new THREE.BufferGeometry();
+    pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+    var particles = new THREE.Points(pGeo,
+      new THREE.PointsMaterial({ color: 0xC4B5D8, size: 0.022, transparent: true, opacity: 0.55 })
+    );
+    scene.add(particles);
+
+    // Resize
+    window.addEventListener('resize', function() {
+      W = window.innerWidth; H = window.innerHeight;
+      camera.aspect = W / H;
+      camera.updateProjectionMatrix();
+      renderer.setSize(W, H);
+    });
+
+    // ── BREATHING LOGIC ─────────────────────────────────────
+    var phaseEl     = document.getElementById('breathe-phase');
+    var countEl     = document.getElementById('breathe-count');
+    var breathValue = 0;   // 0 = fully exhaled, 1 = fully inhaled
+
+    var phaseLabels = { in: 'Breathe in', hold: 'Hold', out: 'Breathe out', holdOut: 'Hold' };
+    var countdownInterval;
+
+    function startCountdown() {
+      clearInterval(countdownInterval);
+
+      function tick() {
+        countEl.textContent = countdown;
+
+        if (countdown <= 0) {
+          nextPhase();
+          return;
+        }
+        countdown--;
+      }
+
+      tick();
+      countdownInterval = setInterval(tick, 1000);
+    }
+
+    function nextPhase() {
+      var p = currentPattern;
+      if (phase === 'in') {
+        phase     = 'hold';
+        countdown = p.hold;
+      } else if (phase === 'hold') {
+        phase     = 'out';
+        countdown = p.out;
+      } else if (phase === 'out') {
+        if (p.holdOut) {
+          phase     = 'holdOut';
+          countdown = p.holdOut;
+        } else {
+          phase     = 'in';
+          countdown = p.in;
+        }
+      } else {
+        phase     = 'in';
+        countdown = p.in;
+      }
+
+      phaseEl.textContent = phaseLabels[phase];
+      if (soundEnabled) playTone(phase);
+      startCountdown();
+    }
+
+    function getBreathTarget() {
+      if (phase === 'in')      return 1;
+      if (phase === 'hold')    return 1;
+      if (phase === 'out')     return 0;
+      if (phase === 'holdOut') return 0;
+      return 0;
+    }
+
+    startCountdown();
+
+    // ── AUDIO (Web Audio API) ───────────────────────────────
+    function initAudio() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+
+    function playTone(phase) {
+      initAudio();
+      var osc  = audioCtx.createOscillator();
+      var gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      var freqs = { in: 396, hold: 528, out: 285, holdOut: 174 };
+      osc.frequency.value = freqs[phase] || 396;
+      osc.type = 'sine';
+
+      gain.gain.setValueAtTime(0, audioCtx.currentTime);
+      gain.gain.linearRampToValueAtTime(0.12, audioCtx.currentTime + 0.3);
+      gain.gain.linearRampToValueAtTime(0,    audioCtx.currentTime + 1.2);
+
+      osc.start(audioCtx.currentTime);
+      osc.stop(audioCtx.currentTime + 1.5);
+    }
+
+    // ── CONTROLS ────────────────────────────────────────────
+    document.querySelectorAll('[data-pattern]').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('[data-pattern]').forEach(function(b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+        currentPattern = patterns[btn.dataset.pattern];
+        phase          = 'in';
+        countdown      = currentPattern.in;
+        phaseEl.textContent = phaseLabels.in;
+        startCountdown();
+      });
+    });
+
+    document.querySelector('[data-sound]').addEventListener('click', function() {
+      soundEnabled = !soundEnabled;
+      this.textContent = soundEnabled ? '🔊 Sound' : '🔇 Sound';
+      document.getElementById('sound-indicator').textContent =
+        soundEnabled ? '🔊 SOUND ON' : '🔇 SOUND OFF';
+      if (soundEnabled) { initAudio(); playTone(phase); }
+    });
+
+    // ── ANIMATION LOOP ──────────────────────────────────────
+    var clock = new THREE.Clock();
+
+    function animate() {
+      requestAnimationFrame(animate);
+      var t = clock.getElapsedTime();
+
+      // Lerp breathValue toward target
+      var target  = getBreathTarget();
+      breathValue += (target - breathValue) * 0.025;
+
+      mat.uniforms.uTime.value   = t;
+      mat.uniforms.uBreath.value = breathValue;
+
+      sphere.rotation.y  += 0.004;
+      ring1.rotation.y    = t * 0.25;
+      ring2.rotation.y    = -t * 0.18;
+      ring2.rotation.x    = -Math.PI / 3 + Math.sin(t * 0.35) * 0.12;
+      particles.rotation.y = t * 0.055;
+      particles.rotation.x = t * 0.035;
+
+      renderer.render(scene, camera);
+    }
+
+    animate();
+
+  </script>
+</body>
+</html>

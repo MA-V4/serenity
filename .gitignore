@@ -1,0 +1,8 @@
+# ── NEVER include these in submissions or version control ──
+
+# Your secret API key lives here — keep it private
+.env
+
+# Python cache files — not needed for submission
+__pycache__/
+*.pyc
